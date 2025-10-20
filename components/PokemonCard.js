@@ -1,26 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import axios from 'axios';
+import { capitalize } from '../utils/helpers';
 
 export default function PokemonCard({ item, onPress }) {
-  const [pokemonData, setPokemonData] = useState(null);
-
-  useEffect(() => {
-    const fetchPokemonData = async () => {
-      try {
-        const response = await axios.get(item.url);
-        setPokemonData(response.data);
-      } catch (error) {
-        console.error(`Erro ao buscar dados para ${item.name}:`, error);
-      }
-    };
-    fetchPokemonData();
-  }, [item.url]);
-
-  if (!pokemonData) {
+  if (!item || !item.sprites) {
     return (
-      <View style={styles.card}>
-        <ActivityIndicator size="small" color="#0000ff" />
+      <View style={[styles.card, styles.cardLoading]}>
+        <ActivityIndicator size="small" color="#999" />
       </View>
     );
   }
@@ -28,11 +14,12 @@ export default function PokemonCard({ item, onPress }) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <Image
-        source={{ uri: pokemonData.sprites.front_default }}
+        source={{ uri: item.sprites.front_default }}
         style={styles.image}
+        resizeMode="contain"
       />
       <Text style={styles.name}>
-        {pokemonData.name.charAt(0).toUpperCase() + pokemonData.name.slice(1)}
+        {capitalize(item.name)}
       </Text>
     </TouchableOpacity>
   );
@@ -48,6 +35,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 150,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  cardLoading: {
+    justifyContent: 'center',
   },
   image: {
     width: 90,
@@ -57,5 +49,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
 });

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Image, ActivityIndicator, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { getPokemonDetails } from '../services/pokeapi';
 import { useFavorites } from '../contexts/FavoritesContext';
+import { capitalize } from '../utils/helpers';
 
 export default function DetailsScreen({ route }) {
   const { pokemonName } = route.params; 
@@ -19,7 +20,7 @@ export default function DetailsScreen({ route }) {
         setDetails(data);
         setError(null);
       } catch (err) {
-        setError("Pokémon não encontrado ou falha na rede.");
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -31,23 +32,21 @@ export default function DetailsScreen({ route }) {
     return <ActivityIndicator size="large" style={styles.centered} />;
   }
 
-  if (error) {
-    return <Text style={styles.errorText}>{error}</Text>;
+  if (error || !details) {
+    return <Text style={styles.errorText}>{error || "Pokémon details could not be loaded."}</Text>;
   }
   
-  const isFav = details ? isFavorite(details.id) : false;
+  const isFav = isFavorite(details.id);
 
   const handleFavoritePress = () => {
-    if (!details) return;
     if (isFav) {
       removeFavorite(details.id);
     } else {
-      const simplifiedPokemon = {
+      addFavorite({
         id: details.id,
         name: details.name,
         sprites: { front_default: details.sprites.front_default }
-      };
-      addFavorite(simplifiedPokemon);
+      });
     }
   };
 
@@ -57,13 +56,13 @@ export default function DetailsScreen({ route }) {
         source={{ uri: details.sprites.front_default }} 
         style={styles.image} 
       />
-      <Text style={styles.name}>{details.name.charAt(0).toUpperCase() + details.name.slice(1)}</Text>
-      <Text style={styles.detailText}>Nº: {details.id}</Text>
-      <Text style={styles.detailText}>Tipos: {details.types.map(t => t.type.name).join(', ')}</Text>
-      <Text style={styles.detailText}>Habilidades: {details.abilities.map(a => a.ability.name).join(', ')}</Text>
+      <Text style={styles.name}>{capitalize(details.name)}</Text>
+      <Text style={styles.detailText}>No. {details.id}</Text>
+      <Text style={styles.detailText}>Types: {details.types.map(t => capitalize(t.type.name)).join(', ')}</Text>
+      <Text style={styles.detailText}>Abilities: {details.abilities.map(a => capitalize(a.ability.name)).join(', ')}</Text>
       
       <TouchableOpacity onPress={handleFavoritePress} style={[styles.button, isFav ? styles.unfavoriteButton : styles.favoriteButton]}>
-        <Text style={styles.buttonText}>{isFav ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}</Text>
+        <Text style={styles.buttonText}>{isFav ? 'Remove from Favorites' : 'Add to Favorites'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -84,6 +83,8 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     marginBottom: 10,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 100,
   },
   name: {
     fontSize: 28,
@@ -93,6 +94,7 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 18,
     marginBottom: 5,
+    color: '#333',
   },
   errorText: {
     flex: 1,
@@ -106,6 +108,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
+    width: '80%',
+    alignItems: 'center',
   },
   favoriteButton: {
     backgroundColor: '#3b4cca',
